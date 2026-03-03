@@ -1,6 +1,259 @@
 # ConstructionJobs
 
 
+Perfect! Let’s design a **full backend schema** for a ServiceM8-like system using **Java/Spring Boot**, including **all entities** and **REST API endpoints** for your Angular 19 frontend. I’ll make it detailed so you can build on it immediately.
+
+---
+
+# **1. Entities**
+
+### **1.1 User**
+
+Represents admin, field worker, or customer.
+
+```java
+@Entity
+public class User {
+    @Id @GeneratedValue
+    private Long id;
+    private String username;
+    private String email;
+    private String password;
+    private String role; // ADMIN, WORKER, CUSTOMER
+    private String phoneNumber;
+    private boolean active;
+}
+```
+
+---
+
+### **1.2 Customer**
+
+Stores customer details (optional if user has role CUSTOMER).
+
+```java
+@Entity
+public class Customer {
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    private String email;
+    private String phoneNumber;
+    private String address;
+}
+```
+
+---
+
+### **1.3 Job**
+
+Represents a service job assigned to a worker for a customer.
+
+```java
+@Entity
+public class Job {
+    @Id @GeneratedValue
+    private Long id;
+    private String title;
+    private String description;
+    private String status; // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+    private LocalDateTime scheduledAt;
+    private LocalDateTime completedAt;
+    
+    @ManyToOne
+    private User assignedWorker;
+    
+    @ManyToOne
+    private Customer customer;
+
+    @OneToMany(mappedBy = "job")
+    private List<JobAttachment> attachments;
+}
+```
+
+---
+
+### **1.4 JobAttachment**
+
+Stores images, documents, or files related to a job.
+
+```java
+@Entity
+public class JobAttachment {
+    @Id @GeneratedValue
+    private Long id;
+    private String fileName;
+    private String fileType;
+    private String fileUrl;
+
+    @ManyToOne
+    private Job job;
+}
+```
+
+---
+
+### **1.5 Invoice**
+
+Stores billing information for completed jobs.
+
+```java
+@Entity
+public class Invoice {
+    @Id @GeneratedValue
+    private Long id;
+    private String invoiceNumber;
+    private LocalDateTime issuedAt;
+    private double amount;
+    private String status; // PAID, UNPAID, PARTIAL
+
+    @ManyToOne
+    private Job job;
+}
+```
+
+---
+
+### **1.6 Notification**
+
+Push notifications for users (optional).
+
+```java
+@Entity
+public class Notification {
+    @Id @GeneratedValue
+    private Long id;
+    private String title;
+    private String message;
+    private boolean read;
+    private LocalDateTime createdAt;
+
+    @ManyToOne
+    private User recipient;
+}
+```
+
+---
+
+### **1.7 Role** *(optional if you want separate table for roles)*
+
+```java
+@Entity
+public class Role {
+    @Id @GeneratedValue
+    private Long id;
+    private String name; // ADMIN, WORKER, CUSTOMER
+}
+```
+
+---
+
+# **2. API Endpoints**
+
+I’ll group them by module.
+
+---
+
+### **2.1 Auth Module**
+
+| Method | Endpoint           | Description                |
+| ------ | ------------------ | -------------------------- |
+| POST   | /api/auth/register | Register new user          |
+| POST   | /api/auth/login    | Login (JWT issued)         |
+| POST   | /api/auth/refresh  | Refresh token              |
+| GET    | /api/auth/me       | Get current logged-in user |
+
+---
+
+### **2.2 Users**
+
+| Method | Endpoint        | Description                 |
+| ------ | --------------- | --------------------------- |
+| GET    | /api/users      | List all users (admin only) |
+| GET    | /api/users/{id} | Get user by ID              |
+| PUT    | /api/users/{id} | Update user                 |
+| DELETE | /api/users/{id} | Delete user                 |
+
+---
+
+### **2.3 Customers**
+
+| Method | Endpoint            | Description        |
+| ------ | ------------------- | ------------------ |
+| GET    | /api/customers      | List all customers |
+| GET    | /api/customers/{id} | Get customer by ID |
+| POST   | /api/customers      | Add new customer   |
+| PUT    | /api/customers/{id} | Update customer    |
+| DELETE | /api/customers/{id} | Delete customer    |
+
+---
+
+### **2.4 Jobs**
+
+| Method | Endpoint              | Description        |
+| ------ | --------------------- | ------------------ |
+| GET    | /api/jobs             | List all jobs      |
+| GET    | /api/jobs/{id}        | Get job by ID      |
+| POST   | /api/jobs             | Create new job     |
+| PUT    | /api/jobs/{id}        | Update job details |
+| PUT    | /api/jobs/{id}/status | Update job status  |
+| DELETE | /api/jobs/{id}        | Delete job         |
+
+---
+
+### **2.5 Job Attachments**
+
+| Method | Endpoint                      | Description            |
+| ------ | ----------------------------- | ---------------------- |
+| POST   | /api/jobs/{jobId}/attachments | Upload files for a job |
+| GET    | /api/jobs/{jobId}/attachments | List files of a job    |
+| DELETE | /api/jobs/attachments/{id}    | Delete file            |
+
+---
+
+### **2.6 Invoices**
+
+| Method | Endpoint           | Description           |
+| ------ | ------------------ | --------------------- |
+| GET    | /api/invoices      | List all invoices     |
+| GET    | /api/invoices/{id} | Get invoice by ID     |
+| POST   | /api/invoices      | Create invoice        |
+| PUT    | /api/invoices/{id} | Update invoice status |
+| DELETE | /api/invoices/{id} | Delete invoice        |
+
+---
+
+### **2.7 Notifications**
+
+| Method | Endpoint                     | Description                           |
+| ------ | ---------------------------- | ------------------------------------- |
+| GET    | /api/notifications           | List notifications for logged-in user |
+| POST   | /api/notifications           | Create notification                   |
+| PUT    | /api/notifications/{id}/read | Mark as read                          |
+| DELETE | /api/notifications/{id}      | Delete notification                   |
+
+---
+
+✅ With these entities and endpoints, you have the **full backend blueprint**. This supports:
+
+* Multi-role users (Admin, Worker, Customer)
+* Job scheduling and tracking
+* File attachments
+* Invoicing
+* Notifications
+
+---
+
+If you want, I can **generate the full Spring Boot project skeleton** with **all entities, repositories, services, controllers, and JWT authentication** so you can immediately start connecting it to Angular 19.
+
+Do you want me to do that next?
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 Here’s how you can build a system like ServiceM8 – Smart Job Management for Trades & Services￼ using Angular 20 (frontend) and Java (backend) — essentially your own field service / job management platform like ServiceM8.  ￼
 
 ⸻
