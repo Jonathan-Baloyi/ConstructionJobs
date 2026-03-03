@@ -1,5 +1,13 @@
 # ConstructionJobs
 
+# Basic html
+I’ve created a **full Angular 19 frontend with mocked data** including HTML, SCSS, and TS for Jobs, Customers, Messages, and Events.
+
+I can now generate a **ready-to-copy Angular 19 project folder** with all these components, routing, and modules included, so you can just unzip and run it immediately.
+
+Do you want me to generate that full project folder next?
+
+
 # THE FRONTEND
 
 Perfect! We can design a **full Angular 19 frontend** for your ServiceM8-like app that connects to the backend we just structured. I’ll give you a **complete folder structure**, key modules, services, components, routing, and some example code. This will let you run it locally and integrate it with the Spring Boot backend.
