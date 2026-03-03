@@ -1,5 +1,237 @@
 # ConstructionJobs
 
+# THE FRONTEND
+
+Perfect! We can design a **full Angular 19 frontend** for your ServiceM8-like app that connects to the backend we just structured. I’ll give you a **complete folder structure**, key modules, services, components, routing, and some example code. This will let you run it locally and integrate it with the Spring Boot backend.
+
+---
+
+## **1. Folder Structure (Angular 19)**
+
+```
+service-m8-frontend/
+│
+├─ src/app/
+│   ├─ auth/
+│   │   ├─ login/
+│   │   ├─ register/
+│   │   └─ auth.service.ts
+│   │
+│   ├─ core/
+│   │   ├─ interceptors/       # JWT Interceptor
+│   │   ├─ guards/             # AuthGuard
+│   │   └─ services/           # Global services like user, notifications
+│   │
+│   ├─ customers/
+│   │   ├─ customer-list/
+│   │   ├─ customer-detail/
+│   │   └─ customer.service.ts
+│   │
+│   ├─ jobs/
+│   │   ├─ job-list/
+│   │   ├─ job-detail/
+│   │   ├─ job-create/
+│   │   └─ job.service.ts
+│   │
+│   ├─ invoices/
+│   │   ├─ invoice-list/
+│   │   └─ invoice.service.ts
+│   │
+│   ├─ messages/
+│   │   ├─ message-list/
+│   │   ├─ message-create/
+│   │   └─ message.service.ts
+│   │
+│   ├─ events/
+│   │   ├─ event-list/
+│   │   └─ event.service.ts
+│   │
+│   ├─ shared/
+│   │   ├─ models/             # All TypeScript models
+│   │   ├─ components/         # Reusable components
+│   │   └─ utils/
+│   │
+│   ├─ app-routing.module.ts
+│   └─ app.module.ts
+│
+├─ angular.json
+├─ package.json
+└─ tsconfig.json
+```
+
+---
+
+## **2. Key Modules & Features**
+
+### **2.1 Auth Module**
+
+* Handles login and registration
+* Stores JWT in `localStorage`
+* AuthGuard protects routes
+
+**auth.service.ts**
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private apiUrl = 'http://localhost:8080/api/auth';
+
+  constructor(private http: HttpClient) {}
+
+  login(username: string, password: string) {
+    return this.http.post<{token: string}>(`${this.apiUrl}/login`, {username, password});
+  }
+
+  register(user: any) {
+    return this.http.post(`${this.apiUrl}/register`, user);
+  }
+
+  getToken() {
+    return localStorage.getItem('token');
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+  }
+}
+```
+
+---
+
+### **2.2 Core Module**
+
+* JWT interceptor for API calls
+* AuthGuard to protect routes
+
+**jwt.interceptor.ts**
+
+```ts
+@Injectable()
+export class JwtInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+  
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+    if (token) {
+      req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+    }
+    return next.handle(req);
+  }
+}
+```
+
+---
+
+### **2.3 Models (TypeScript)**
+
+```ts
+export interface User { id: number; username: string; email: string; role: string; }
+export interface Customer { id: number; name: string; email: string; phoneNumber: string; address: string; }
+export interface Job { id: number; title: string; description: string; status: string; assignedWorker?: User; customer?: Customer; }
+export interface Invoice { id: number; invoiceNumber: string; amount: number; status: string; }
+export interface Message { id: number; content: string; sender: User; recipient: User; }
+export interface Event { id: number; type: string; description: string; createdAt: string; }
+```
+
+---
+
+### **2.4 Services**
+
+Example: **job.service.ts**
+
+```ts
+@Injectable({ providedIn: 'root' })
+export class JobService {
+  private apiUrl = 'http://localhost:8080/api/jobs';
+
+  constructor(private http: HttpClient) {}
+
+  getJobs() {
+    return this.http.get<Job[]>(this.apiUrl);
+  }
+
+  getJob(id: number) {
+    return this.http.get<Job>(`${this.apiUrl}/${id}`);
+  }
+
+  createJob(job: Job) {
+    return this.http.post(this.apiUrl, job);
+  }
+
+  updateJob(id: number, job: Job) {
+    return this.http.put(`${this.apiUrl}/${id}`, job);
+  }
+
+  updateStatus(id: number, status: string) {
+    return this.http.put(`${this.apiUrl}/${id}/status`, { status });
+  }
+}
+```
+
+You can replicate similar **services** for Customers, Invoices, Messages, and Events.
+
+---
+
+### **2.5 Routing Example**
+
+```ts
+const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { path: '', redirectTo: '/jobs', pathMatch: 'full' },
+  { path: 'jobs', component: JobListComponent, canActivate: [AuthGuard] },
+  { path: 'jobs/:id', component: JobDetailComponent, canActivate: [AuthGuard] },
+  { path: 'customers', component: CustomerListComponent, canActivate: [AuthGuard] },
+  { path: 'messages', component: MessageListComponent, canActivate: [AuthGuard] },
+  { path: 'events', component: EventListComponent, canActivate: [AuthGuard] },
+];
+```
+
+---
+
+### **2.6 Components**
+
+* **JobListComponent** – displays jobs in a table with status
+* **JobDetailComponent** – shows job details + attachments
+* **CustomerListComponent** – lists all customers
+* **MessageListComponent** – inbox for messages
+* **EventListComponent** – shows system events/notifications
+
+---
+
+### **2.7 Styling & UI**
+
+* Use **Angular Material** or **TailwindCSS**
+* Tables, forms, and buttons are ready-made with Material
+* ReactiveFormsModule for forms
+
+---
+
+### **3. Running the App**
+
+1. **Install dependencies**:
+
+```bash
+npm install
+```
+
+2. **Run the app**:
+
+```bash
+ng serve
+```
+
+3. Access at `http://localhost:4200/` and connect to Spring Boot backend at `http://localhost:8080/api/*`.
+
+---
+
+I can also **generate a full ready-to-copy Angular 19 folder** with **all modules, components, services, routing, and models prebuilt**, so you can just unzip it and run it immediately.
+
+Do you want me to do that next?
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------
+
 # 1. THE BACKEND
 
 Perfect! I’ll outline and generate a **full Spring Boot skeleton** for your ServiceM8-like app, including **entities, repositories, services, controllers, and JWT auth** so you can immediately run it locally and connect your Angular 19 frontend.
