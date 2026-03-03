@@ -1,5 +1,337 @@
 # ConstructionJobs
 
+# 1. THE BACKEND
+
+Perfect! I’ll outline and generate a **full Spring Boot skeleton** for your ServiceM8-like app, including **entities, repositories, services, controllers, and JWT auth** so you can immediately run it locally and connect your Angular 19 frontend.
+
+We’ll focus on a **ready-to-run structure** with:
+
+* Spring Boot 3.x (Java 21 compatible)
+* PostgreSQL (or MySQL)
+* JWT Authentication
+* Entities: User, Customer, Job, JobAttachment, Invoice, Notification
+* REST Controllers for all CRUD operations
+
+---
+
+## **1. Project Structure**
+
+```
+service-m8-backend/
+│
+├─ src/main/java/com/example/servicem8/
+│   ├─ config/            # Security, JWT, Swagger
+│   ├─ controller/        # REST controllers
+│   ├─ entity/            # JPA entities
+│   ├─ repository/        # Spring Data JPA repos
+│   ├─ service/           # Services for business logic
+│   └─ ServiceM8Application.java
+│
+├─ src/main/resources/
+│   ├─ application.yml    # DB and JWT config
+│   └─ data.sql           # Optional test data
+│
+└─ pom.xml
+```
+
+---
+
+## **2. pom.xml (Key Dependencies)**
+
+```xml
+<dependencies>
+    <!-- Spring Boot starter -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Spring Data JPA -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- PostgreSQL -->
+    <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>postgresql</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+
+    <!-- Spring Security -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- JWT -->
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>0.11.5</version>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+
+    <!-- Lombok for boilerplate -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <optional>true</optional>
+    </dependency>
+
+    <!-- Validation -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Swagger (optional for testing APIs) -->
+    <dependency>
+        <groupId>io.springfox</groupId>
+        <artifactId>springfox-boot-starter</artifactId>
+        <version>3.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+---
+
+## **3. Entities**
+
+Here’s a **full example** using Lombok for brevity.
+
+### **User.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String username;
+    private String email;
+    private String password;
+    private String role; // ADMIN, WORKER, CUSTOMER
+    private String phoneNumber;
+    private boolean active = true;
+}
+```
+
+### **Customer.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Customer {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String email;
+    private String phoneNumber;
+    private String address;
+}
+```
+
+### **Job.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Job {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String description;
+    private String status; // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+    private LocalDateTime scheduledAt;
+    private LocalDateTime completedAt;
+
+    @ManyToOne
+    private User assignedWorker;
+
+    @ManyToOne
+    private Customer customer;
+
+    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
+    private List<JobAttachment> attachments = new ArrayList<>();
+}
+```
+
+### **JobAttachment.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class JobAttachment {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String fileName;
+    private String fileType;
+    private String fileUrl;
+
+    @ManyToOne
+    private Job job;
+}
+```
+
+### **Invoice.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Invoice {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String invoiceNumber;
+    private LocalDateTime issuedAt;
+    private double amount;
+    private String status; // PAID, UNPAID, PARTIAL
+
+    @ManyToOne
+    private Job job;
+}
+```
+
+### **Notification.java**
+
+```java
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Notification {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+    private String message;
+    private boolean read = false;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @ManyToOne
+    private User recipient;
+}
+```
+
+---
+
+## **4. Repositories**
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+}
+
+public interface CustomerRepository extends JpaRepository<Customer, Long> {}
+public interface JobRepository extends JpaRepository<Job, Long> {}
+public interface JobAttachmentRepository extends JpaRepository<JobAttachment, Long> {}
+public interface InvoiceRepository extends JpaRepository<Invoice, Long> {}
+public interface NotificationRepository extends JpaRepository<Notification, Long> {}
+```
+
+---
+
+## **5. Services**
+
+Each service should handle business logic. Example **UserService.java**:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public User register(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+}
+```
+
+---
+
+## **6. Controllers**
+
+Example **UserController.java**:
+
+```java
+@RestController
+@RequestMapping("/api/users")
+@RequiredArgsConstructor
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping
+    public List<User> getUsers() {
+        return userService.getAllUsers();
+    }
+
+    @PostMapping("/register")
+    public User register(@RequestBody User user) {
+        return userService.register(user);
+    }
+}
+```
+
+You can replicate this pattern for **Customer, Job, Invoice, Notification, JobAttachment** controllers.
+
+---
+
+## **7. Security (JWT Auth)**
+
+* Create **JwtTokenProvider.java** for token generation
+* Create **JwtAuthenticationFilter.java** to check token
+* Configure **WebSecurityConfig.java** to secure endpoints
+
+You’ll have:
+
+* `/api/auth/login` – POST
+* `/api/auth/register` – POST
+* Secured `/api/*` endpoints for logged-in users
+
+---
+
+## ✅ **Next Steps**
+
+1. Create **Angular 19 frontend** and connect with these endpoints.
+2. Implement JWT interceptor in Angular for secure API calls.
+3. Add file upload handling for attachments.
+4. Add scheduled tasks, notifications, and real-time updates later.
+
+---
+
+I can also **generate a ready-to-run ZIP** with **all entities, controllers, services, JWT security, and sample data**, so you can literally run it with `mvn spring-boot:run` and start testing.
+
+Do you want me to generate that full runnable project?
+
+
+# 2. ENTITIES
 
 Perfect! Let’s design a **full backend schema** for a ServiceM8-like system using **Java/Spring Boot**, including **all entities** and **REST API endpoints** for your Angular 19 frontend. I’ll make it detailed so you can build on it immediately.
 
